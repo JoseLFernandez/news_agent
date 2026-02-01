@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-serif: 'Playfair Display', Georgia, serif;
+  --font-sans: 'Source Sans 3', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #fafafa;
+  color: #1a1a1a;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-serif);
+}
+
+@layer components {
+  .headline-large {
+    @apply text-3xl md:text-4xl lg:text-5xl font-bold leading-tight;
+    font-family: var(--font-serif);
+  }
+
+  .headline-medium {
+    @apply text-xl md:text-2xl font-semibold leading-snug;
+    font-family: var(--font-serif);
+  }
+
+  .headline-small {
+    @apply text-base md:text-lg font-semibold leading-snug;
+    font-family: var(--font-serif);
+  }
+
+  .body-text {
+    @apply text-sm md:text-base leading-relaxed text-gray-700;
+  }
+
+  .meta-text {
+    @apply text-xs text-gray-500 uppercase tracking-wide;
+  }
+
+  .section-divider {
+    @apply border-t-2 border-gray-900 pt-4 mt-6;
+  }
+
+  .article-card {
+    @apply bg-white hover:shadow-md transition-shadow duration-200;
+  }
+}
