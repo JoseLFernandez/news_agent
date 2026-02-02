@@ -1,4 +1,11 @@
-export type ArticleSource = 'medium' | 'gdelt' | 'perplexity' | 'finance' | 'ft' | 'myft'
+export type ArticleSource =
+  | 'medium'
+  | 'gdelt'
+  | 'perplexity'
+  | 'finance'
+  | 'ft'
+  | 'myft'
+  | (string & {})
 
 export interface Article {
   id: string

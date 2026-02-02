@@ -4,13 +4,16 @@
   functions = "netlify/functions"
 
 [functions]
-  node_bundler = "esbuild"
+  # Disable bundler to avoid module resolution issues
+  node_bundler = "none"
 
 [dev]
   command = "npm run dev"
   targetPort = 5173
   port = 8888
   autoLaunch = false
+  # Disable function caching to avoid .js/.cjs conflicts
+  functionsPort = 9999
 
 [[redirects]]
   from = "/api/*"

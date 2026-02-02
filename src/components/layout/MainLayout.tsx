@@ -27,7 +27,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
       {/* Footer */}
       <footer className="border-t border-gray-200 mt-12 py-8 text-center text-sm text-gray-500">
-        <p>Your Personal News Aggregator</p>
+        <p>Your Personal Ball News</p>
         <p className="mt-1">
           Powered by Medium RSS & Perplexity AI
         </p>

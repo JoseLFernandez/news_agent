@@ -13,6 +13,17 @@ const REGIONS: { id: Country['region']; label: string }[] = [
   { id: 'oceania', label: 'Oceania' },
 ]
 
+const LANGUAGES = [
+  { code: 'en', label: 'English', flag: '🇬🇧' },
+  { code: 'fr', label: 'French', flag: '🇫🇷' },
+  { code: 'de', label: 'German', flag: '🇩🇪' },
+  { code: 'es', label: 'Spanish', flag: '🇪🇸' },
+  { code: 'it', label: 'Italian', flag: '🇮🇹' },
+  { code: 'pt', label: 'Portuguese', flag: '🇧🇷' },
+  { code: 'nl', label: 'Dutch', flag: '🇳🇱' },
+  { code: 'pl', label: 'Polish', flag: '🇵🇱' },
+]
+
 const CATEGORY_COLORS: Record<TrendingCategory, string> = {
   technology: 'bg-blue-500',
   business: 'bg-emerald-500',
@@ -38,7 +49,12 @@ interface TrendingByCountryProps {
 export default function TrendingByCountry({ initialCountry }: TrendingByCountryProps) {
   const [selectedCountry, setSelectedCountry] = useState('US')
   const [showDropdown, setShowDropdown] = useState(false)
+  const [showLangDropdown, setShowLangDropdown] = useState(false)
+  const [expandedTopic, setExpandedTopic] = useState<number | null>(null)
+  const [language, setLanguage] = useState('en')
+  const [translate, setTranslate] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const langDropdownRef = useRef<HTMLDivElement>(null)
 
   // Sync with map selection
   useEffect(() => {
@@ -50,11 +66,14 @@ export default function TrendingByCountry({ initialCountry }: TrendingByCountryP
     }
   }, [initialCountry])
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setShowDropdown(false)
+      }
+      if (langDropdownRef.current && !langDropdownRef.current.contains(event.target as Node)) {
+        setShowLangDropdown(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -62,9 +81,12 @@ export default function TrendingByCountry({ initialCountry }: TrendingByCountryP
   }, [])
 
   const country = getCountry(selectedCountry)
+  const selectedLang = LANGUAGES.find((l) => l.code === language) || LANGUAGES[0]
 
   const { data, isLoading, error, refetch } = useTrendingTopics(
-    country?.name || 'United States'
+    country?.name || 'United States',
+    language,
+    translate
   )
 
   const featuredCountries = FEATURED_COUNTRIES.map(
@@ -158,6 +180,60 @@ export default function TrendingByCountry({ initialCountry }: TrendingByCountryP
             )}
           </div>
         </div>
+
+        {/* Language Controls */}
+        <div className="flex items-center gap-3 mt-3 pt-3 border-t border-gray-100">
+          {/* Language Selector */}
+          <div className="relative" ref={langDropdownRef}>
+            <button
+              onClick={() => setShowLangDropdown(!showLangDropdown)}
+              className={clsx(
+                'flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all border',
+                showLangDropdown
+                  ? 'bg-ink-900 text-white border-ink-900'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+              )}
+            >
+              <span>{selectedLang.flag}</span>
+              <span>{selectedLang.label}</span>
+              <span className="text-[10px]">▾</span>
+            </button>
+
+            {showLangDropdown && (
+              <div className="absolute top-full left-0 mt-1 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang.code)
+                      setShowLangDropdown(false)
+                    }}
+                    className={clsx(
+                      'w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 hover:bg-gray-100 transition-colors',
+                      language === lang.code && 'bg-gray-100 font-medium'
+                    )}
+                  >
+                    <span>{lang.flag}</span>
+                    <span>{lang.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Translation Toggle */}
+          {language !== 'en' && (
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={translate}
+                onChange={(e) => setTranslate(e.target.checked)}
+                className="w-3.5 h-3.5 text-accent-blue rounded border-gray-300 focus:ring-accent-blue"
+              />
+              <span className="text-xs text-gray-600">Translate to English</span>
+            </label>
+          )}
+        </div>
       </div>
 
       {/* Content */}
@@ -169,7 +245,9 @@ export default function TrendingByCountry({ initialCountry }: TrendingByCountryP
             <h3 className="font-semibold text-ink-900">
               What's trending in {country?.name}
             </h3>
-            <p className="text-xs text-gray-500">Real-time trending topics</p>
+            <p className="text-xs text-gray-500">
+              {language === 'en' ? 'Real-time trending topics' : `${selectedLang.label} sources${translate ? ' (translated)' : ''}`}
+            </p>
           </div>
         </div>
 
@@ -207,46 +285,93 @@ export default function TrendingByCountry({ initialCountry }: TrendingByCountryP
             {data.topics.map((topic, index) => (
               <div
                 key={index}
-                className="flex items-start gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                className="border border-gray-200 rounded-lg overflow-hidden"
               >
-                {/* Heat Indicator */}
-                <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-lg">
-                  {CATEGORY_ICONS[topic.category] || '📰'}
-                </div>
+                {/* Topic Header - Clickable */}
+                <button
+                  onClick={() => setExpandedTopic(expandedTopic === index ? null : index)}
+                  className="w-full flex items-start gap-3 p-3 hover:bg-gray-50 transition-colors text-left"
+                >
+                  {/* Heat Indicator */}
+                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-lg">
+                    {CATEGORY_ICONS[topic.category] || '📰'}
+                  </div>
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <h4 className="font-medium text-ink-900 text-sm line-clamp-1">
-                      {topic.title}
-                    </h4>
-                    {/* Heat bar */}
-                    <div className="flex-shrink-0 flex items-center gap-0.5">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className={clsx(
-                            'w-1 h-3 rounded-full transition-colors',
-                            i < Math.ceil(topic.heat / 2)
-                              ? 'bg-orange-400'
-                              : 'bg-gray-200'
-                          )}
-                        />
-                      ))}
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <h4 className="font-medium text-ink-900 text-sm line-clamp-1">
+                        {topic.title}
+                      </h4>
+                      {/* Heat bar */}
+                      <div className="flex-shrink-0 flex items-center gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className={clsx(
+                              'w-1 h-3 rounded-full transition-colors',
+                              i < Math.ceil(topic.heat / 2)
+                                ? 'bg-orange-400'
+                                : 'bg-gray-200'
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-600 line-clamp-2">
+                      {topic.summary}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span
+                        className={clsx(
+                          'inline-block px-1.5 py-0.5 text-[10px] font-medium text-white rounded',
+                          CATEGORY_COLORS[topic.category] || 'bg-gray-500'
+                        )}
+                      >
+                        {topic.category}
+                      </span>
+                      {topic.articles && topic.articles.length > 0 && (
+                        <span className="text-[10px] text-accent-blue">
+                          Click to view {topic.articles.length} articles →
+                        </span>
+                      )}
                     </div>
                   </div>
-                  <p className="text-xs text-gray-600 line-clamp-2">
-                    {topic.summary}
-                  </p>
-                  <span
-                    className={clsx(
-                      'inline-block mt-1 px-1.5 py-0.5 text-[10px] font-medium text-white rounded',
-                      CATEGORY_COLORS[topic.category] || 'bg-gray-500'
-                    )}
-                  >
-                    {topic.category}
-                  </span>
-                </div>
+                </button>
+
+                {/* Expanded Articles */}
+                {expandedTopic === index && topic.articles && topic.articles.length > 0 && (
+                  <div className="border-t border-gray-200 bg-gray-50 p-3">
+                    <div className="space-y-2">
+                      {topic.articles.slice(0, 10).map((article, artIndex) => (
+                        <a
+                          key={artIndex}
+                          href={article.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block p-2 bg-white border border-gray-200 rounded hover:border-accent-blue transition-colors"
+                        >
+                          <h5 className="text-sm font-medium text-ink-900 line-clamp-2 mb-1 hover:text-accent-blue">
+                            {article.title}
+                          </h5>
+                          {article.originalTitle && (
+                            <p className="text-xs text-gray-400 italic line-clamp-1 mb-1">
+                              {article.originalTitle}
+                            </p>
+                          )}
+                          <p className="text-xs text-gray-500">
+                            {article.source} • {article.date}
+                          </p>
+                        </a>
+                      ))}
+                      {topic.articles.length > 10 && (
+                        <p className="text-xs text-gray-500 text-center pt-1">
+                          +{topic.articles.length - 10} more articles
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

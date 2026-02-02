@@ -1,14 +1,18 @@
+import { useState } from 'react'
 import { useArticles } from '../hooks/useArticles'
-import { useAutoIndex } from '../hooks/useAutoIndex'
 import ArticleGrid from '../components/articles/ArticleGrid'
+import ArticleTimeline from '../components/articles/ArticleTimeline'
 import TopicFilter from '../components/filters/TopicFilter'
 import DateFilter from '../components/filters/DateFilter'
 
 export default function HomePage() {
   const { articles, isLoading, isError, error, refetch } = useArticles()
+  const [viewMode, setViewMode] = useState<'grid' | 'timeline'>('grid')
 
   // Auto-index articles to Pinecone for semantic search
-  const { isIndexing } = useAutoIndex(articles, !isLoading && articles.length > 0)
+  // Disable auto-indexing to avoid Pinecone embedding errors
+  // const { isIndexing } = useAutoIndex(articles, !isLoading && articles.length > 0)
+  const isIndexing = false
 
   return (
     <div>
@@ -16,6 +20,28 @@ export default function HomePage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <TopicFilter />
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                viewMode === 'grid'
+                  ? 'bg-ink-900 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Grid
+            </button>
+            <button
+              onClick={() => setViewMode('timeline')}
+              className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                viewMode === 'timeline'
+                  ? 'bg-ink-900 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              Timeline
+            </button>
+          </div>
           <DateFilter />
           <button
             onClick={refetch}
@@ -55,8 +81,12 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Article Grid */}
-      <ArticleGrid articles={articles} isLoading={isLoading} />
+      {/* Articles */}
+      {viewMode === 'timeline' && !isLoading ? (
+        <ArticleTimeline articles={articles} />
+      ) : (
+        <ArticleGrid articles={articles} isLoading={isLoading} />
+      )}
 
       {/* Article Count & Index Status */}
       {!isLoading && articles.length > 0 && (

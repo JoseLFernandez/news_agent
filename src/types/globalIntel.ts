@@ -11,6 +11,13 @@ export interface TrendingTopic {
   summary: string
   category: TrendingCategory
   heat: number // 1-10
+  articles?: Array<{
+    title: string
+    originalTitle?: string // Original title before translation
+    url: string
+    source: string
+    date: string
+  }>
 }
 
 export interface TrendingResponse {
@@ -39,6 +46,7 @@ export interface RecentDevelopment {
   title: string
   date?: string
   summary?: string
+  url?: string
 }
 
 export interface RegulatoryData {

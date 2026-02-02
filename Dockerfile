@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy package files and install dependencies
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN npm install --legacy-peer-deps rss-parser || yarn add rss-parser || pnpm add rss-parser
+RUN npm ci --legacy-peer-deps
 
 # Copy all source code (including .env if present)
 COPY . .
@@ -29,20 +29,18 @@ COPY backend/requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 COPY backend ./
 
-# Final image: serve frontend and backend
+# Final image: serve built frontend + lightweight functions router
 FROM node:20-slim AS final
 WORKDIR /app
 
-# Copy built frontend
+# Copy built frontend + functions
 COPY --from=base /app/dist ./dist
 COPY --from=base /app/netlify ./netlify
 COPY --from=backend /app/backend ./backend
 
-# Install serve for static files
-RUN npm install -g serve
+# Minimal deps for functions + static serve
+RUN npm install -g serve && npm install express rss-parser
 
-# Expose frontend port
 EXPOSE 3030
 
-# Start frontend and backend (example: static frontend + Netlify dev for serverless)
-CMD ["sh", "-c", "serve -s dist -l 3030 & npx netlify dev"]
+CMD ["node", "./backend/docker-functions-server.cjs"]

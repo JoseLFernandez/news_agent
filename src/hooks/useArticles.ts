@@ -4,7 +4,7 @@ import { useGdeltArticles } from '../api/gdelt'
 import { useFinanceNews } from '../api/finance'
 import { useFTNews, useMyFT } from '../api/ft'
 import { useFilterStore } from '../stores/filterStore'
-import { isWithinDateRange } from '../utils/dateUtils'
+import { isWithinCustomDateRange, isWithinDateRange } from '../utils/dateUtils'
 import type { Article } from '../types/article'
 
 interface UseArticlesResult {
@@ -19,7 +19,7 @@ interface UseArticlesResult {
  * Combined hook that fetches, filters, and sorts articles from all sources
  */
 export function useArticles(): UseArticlesResult {
-  const { selectedTopics, dateRange, sortBy, sources } = useFilterStore()
+  const { selectedTopics, dateRange, dateRangeCustom, sortBy, sources } = useFilterStore()
 
   // Fetch from all sources
   const mediumQuery = useMediumArticles(selectedTopics)
@@ -80,9 +80,12 @@ export function useArticles(): UseArticlesResult {
     }
 
     // Filter by date range
-    const filtered = allArticles.filter((article) =>
-      isWithinDateRange(article.publishedAt, dateRange)
-    )
+    const filtered = allArticles.filter((article) => {
+      if (dateRange === 'custom' && dateRangeCustom) {
+        return isWithinCustomDateRange(article.publishedAt, dateRangeCustom)
+      }
+      return isWithinDateRange(article.publishedAt, dateRange)
+    })
 
     // Filter by selected topics (if any)
     const topicFiltered =
@@ -108,7 +111,7 @@ export function useArticles(): UseArticlesResult {
       ).length
       return bMatchCount - aMatchCount
     })
-  }, [mediumQuery.data, gdeltQuery.data, financeQuery.data, ftQuery.data, myftQuery.data, sources, dateRange, selectedTopics, sortBy])
+  }, [mediumQuery.data, gdeltQuery.data, financeQuery.data, ftQuery.data, myftQuery.data, sources, dateRange, dateRangeCustom, selectedTopics, sortBy])
 
   const refetch = () => {
     mediumQuery.refetch()

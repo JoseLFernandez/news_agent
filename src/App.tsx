@@ -3,6 +3,7 @@ import MainLayout from './components/layout/MainLayout'
 import HomePage from './pages/HomePage'
 import TopicPage from './pages/TopicPage'
 import GlobalDashboard from './pages/GlobalDashboard'
+import { GitHubDashboard } from './pages/GitHubDashboard'
 import SearchModal from './components/search/SearchModal'
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/topic/:topic" element={<TopicPage />} />
           <Route path="/global" element={<GlobalDashboard />} />
+          <Route path="/github" element={<GitHubDashboard />} />
         </Routes>
       </MainLayout>
       <SearchModal />

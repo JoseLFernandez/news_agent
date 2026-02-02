@@ -22,6 +22,14 @@ function inferTopicsFromText(text: string): string[] {
   if (/(design|ux|ui)/.test(t)) topics.push('design')
   if (/(business|earnings|market|stocks)/.test(t)) topics.push('business')
   if (/(science|research|study)/.test(t)) topics.push('science')
+  if (/(leadership|leader|ceo|executive|management|manager|c-suite|cto|cfo|founder)/.test(t)) topics.push('leadership')
+  if (/(cybersecurity|cyber security|infosec|data breach|ransomware|phishing|firewall|vulnerability|cve|zero-day)/.test(t)) topics.push('cybersecurity')
+  if (/(hack|hacker|hacking|exploit|penetration test|pentest|bug bounty|ctf|capture the flag)/.test(t)) topics.push('hacking')
+  if (/(crack|cracking|reverse engineer|disassembl|decompil|malware analysis|binary analysis|keygen)/.test(t)) {
+    topics.push('cracking')
+    if (!topics.includes('cybersecurity')) topics.push('cybersecurity')
+  }
+  if (/(dark web|darkweb|darknet|tor network|onion|deep web|silk road|hidden service)/.test(t)) topics.push('darkweb')
   return topics.length ? topics : ['technology']
 }
 

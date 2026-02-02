@@ -16,6 +16,10 @@ export const TOPICS: Topic[] = [
   { id: 'regulatory', label: 'Regulatory', color: '#64748b' },
   { id: 'finance', label: 'Finance & Investment', color: '#16a34a' },
   { id: 'leadership', label: 'Leadership', color: '#f59e0b' },
+  { id: 'cybersecurity', label: 'Cybersecurity', color: '#0f766e' },
+  { id: 'hacking', label: 'Hacking', color: '#be123c' },
+  { id: 'cracking', label: 'Cracking', color: '#9f1239' },
+  { id: 'darkweb', label: 'Dark Web', color: '#1e1b4b' },
 ]
 
 export const TOPIC_MAP = new Map(TOPICS.map(t => [t.id, t]))

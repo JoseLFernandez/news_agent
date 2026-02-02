@@ -8,6 +8,7 @@ type FilterStore = FilterState & FilterActions
 const initialState: FilterState = {
   selectedTopics: [],
   dateRange: 'week',
+  dateRangeCustom: null,
   sortBy: 'date',
   // Article list supports Medium + GDELT + Finance + FT; MyFT requires auth (enable manually); Perplexity is used for intel widgets/search.
   sources: ['medium', 'gdelt', 'finance', 'ft'],
@@ -30,7 +31,13 @@ export const useFilterStore = create<FilterStore>()(
         })),
 
       setDateRange: (range: DateRange) =>
-        set({ dateRange: range }),
+        set((state) => ({
+          dateRange: range,
+          dateRangeCustom: range === 'custom' ? state.dateRangeCustom : null,
+        })),
+
+      setDateRangeCustom: (range) =>
+        set({ dateRangeCustom: range, dateRange: 'custom' }),
 
       setSortBy: (sort: SortBy) =>
         set({ sortBy: sort }),
@@ -56,6 +63,7 @@ export const useFilterStore = create<FilterStore>()(
       partialize: (state) => ({
         selectedTopics: state.selectedTopics,
         dateRange: state.dateRange,
+        dateRangeCustom: state.dateRangeCustom,
         sortBy: state.sortBy,
         sources: state.sources,
       }),

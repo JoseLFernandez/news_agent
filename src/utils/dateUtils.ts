@@ -8,8 +8,10 @@ import {
   startOfDay,
   subWeeks,
   subMonths,
+  parseISO,
+  startOfDay as startOfDayFn,
 } from 'date-fns'
-import type { DateRange } from '../types/filters'
+import type { DateRange, DateRangeCustom } from '../types/filters'
 
 /**
  * Format a date for display in article cards
@@ -63,8 +65,24 @@ export function getDateRangeStart(range: DateRange): Date | null {
     case 'month':
       return subMonths(now, 1)
     case 'all':
+    case 'custom':
       return null
   }
+}
+
+export function isWithinCustomDateRange(
+  date: Date,
+  range: DateRangeCustom
+): boolean {
+  const start = startOfDayFn(parseISO(range.start))
+  const end = startOfDayFn(parseISO(range.end))
+
+  // If user picked them backwards, treat it as inclusive between.
+  const min = start <= end ? start : end
+  const max = start <= end ? end : start
+
+  const day = startOfDayFn(date)
+  return day >= min && day <= max
 }
 
 /**
@@ -73,7 +91,7 @@ export function getDateRangeStart(range: DateRange): Date | null {
 export function isWithinDateRange(date: Date, range: DateRange): boolean {
   const rangeStart = getDateRangeStart(range)
 
-  if (!rangeStart) return true // 'all' range
+  if (!rangeStart) return true // 'all' and 'custom' handled elsewhere
 
   return date >= rangeStart
 }

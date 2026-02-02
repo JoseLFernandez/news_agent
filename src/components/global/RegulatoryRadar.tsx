@@ -196,21 +196,39 @@ export default function RegulatoryRadar({ selectedCountry: initialCountry }: Reg
             {data.data.recentDevelopments.length > 0 && (
               <div>
                 <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                  Recent Developments
+                  Recent Articles ({data.data.recentDevelopments.length})
                 </h4>
-                <ul className="space-y-2">
-                  {data.data.recentDevelopments.map((dev, index) => (
-                    <li
-                      key={index}
-                      className="flex items-start gap-2 text-sm text-gray-700"
-                    >
-                      <span className="text-accent-blue mt-1">•</span>
-                      <span>
-                        {typeof dev === 'string' ? dev : dev.title}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="space-y-3">
+                  {data.data.recentDevelopments.map((dev, index) => {
+                    const devObj = typeof dev === 'string' ? { title: dev } : dev
+                    return (
+                      <div
+                        key={index}
+                        className="p-3 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                      >
+                        {devObj.url ? (
+                          <a
+                            href={devObj.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-ink-900 hover:text-accent-blue font-medium line-clamp-2 mb-1 block"
+                          >
+                            {devObj.title}
+                          </a>
+                        ) : (
+                          <p className="text-sm text-ink-900 font-medium line-clamp-2 mb-1">
+                            {devObj.title}
+                          </p>
+                        )}
+                        {devObj.summary && (
+                          <p className="text-xs text-gray-500">
+                            {devObj.summary}
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
 

@@ -9,13 +9,19 @@ import type {
 /**
  * Fetch trending topics for a country
  */
-async function fetchTrendingTopics(countryName: string): Promise<TrendingResponse> {
+async function fetchTrendingTopics(
+  countryName: string,
+  language: string = 'en',
+  translate: boolean = false
+): Promise<TrendingResponse> {
   const response = await fetch('/.netlify/functions/global-intel', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       action: 'trending',
       countryName,
+      language,
+      translate,
     }),
   })
 
@@ -55,10 +61,15 @@ async function fetchRegulatoryIntel(
 /**
  * Hook for trending topics by country
  */
-export function useTrendingTopics(countryName: string, enabled = true) {
+export function useTrendingTopics(
+  countryName: string,
+  language: string = 'en',
+  translate: boolean = false,
+  enabled = true
+) {
   return useQuery({
-    queryKey: ['trending', countryName],
-    queryFn: () => fetchTrendingTopics(countryName),
+    queryKey: ['trending', countryName, language, translate],
+    queryFn: () => fetchTrendingTopics(countryName, language, translate),
     enabled: enabled && countryName.length > 0,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 30, // 30 minutes
