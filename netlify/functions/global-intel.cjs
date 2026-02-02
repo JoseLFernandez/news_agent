@@ -40,29 +40,51 @@ exports.handler = async function(event, context) {
     const body = JSON.parse(event.body);
     const { action, countryName, topic, countryNames, language = 'en', translate = false } = body;
 
-    console.log('Global intel request:', { action, countryName, topic, countryNames, language, translate });
+    // Expand short/ambiguous country labels to improve GDELT recall.
+    const countryNameMap = {
+      uae: 'United Arab Emirates',
+      uk: 'United Kingdom',
+      us: 'United States',
+      eu: 'European Union',
+    };
+    const normalizedCountryName =
+      countryNameMap[String(countryName || '').trim().toLowerCase()] || countryName;
+
+    console.log('Global intel request:', {
+      action,
+      countryName: normalizedCountryName,
+      topic,
+      countryNames,
+      language,
+      translate,
+    });
 
     if (action === 'trending') {
       // Fetch trending topics for a country using GDELT
       const timespan = '3d'; // Last 3 days
 
-      // Use domain filter based on selected language
+      // Use domain filter based on selected language.
+      // For local coverage, allow any language and skip the domain restriction.
       const domains = languageDomains[language] || languageDomains['en'];
       const domainFilter = domains.slice(0, 5).map(d => `domain:${d}`).join(' OR ');
-      const query = `${countryName} (${domainFilter})`;
+      const primaryQuery = language === 'any'
+        ? String(normalizedCountryName || '')
+        : `${normalizedCountryName} (${domainFilter})`;
 
       // Map language codes to GDELT sourcelang
       const gdeltLangMap = { en: 'eng', fr: 'fra', de: 'deu', es: 'spa', it: 'ita', pt: 'por', nl: 'nld', pl: 'pol' };
 
       const gdeltUrl = new URL('https://api.gdeltproject.org/api/v2/doc/doc');
-      gdeltUrl.searchParams.set('query', query);
+      gdeltUrl.searchParams.set('query', primaryQuery);
       gdeltUrl.searchParams.set('mode', 'artlist');
       gdeltUrl.searchParams.set('timespan', timespan);
       gdeltUrl.searchParams.set('format', 'json');
       gdeltUrl.searchParams.set('maxrecords', '250');
-      gdeltUrl.searchParams.set('sourcelang', gdeltLangMap[language] || 'eng');
+      if (language !== 'any') {
+        gdeltUrl.searchParams.set('sourcelang', gdeltLangMap[language] || 'eng');
+      }
 
-      console.log('GDELT trending URL:', gdeltUrl.toString(), 'Language:', language);
+      console.log('GDELT trending URL:', gdeltUrl.toString(), 'Language:', language, 'Country:', normalizedCountryName);
 
       const gdeltResponse = await fetch(gdeltUrl.toString());
       
@@ -72,7 +94,7 @@ exports.handler = async function(event, context) {
           statusCode: 200,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            country: countryName,
+            country: normalizedCountryName,
             topics: [],
             timestamp: new Date().toISOString()
           })
@@ -87,7 +109,7 @@ exports.handler = async function(event, context) {
           statusCode: 200,
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            country: countryName,
+            country: normalizedCountryName,
             topics: [],
             timestamp: new Date().toISOString()
           })
@@ -95,24 +117,15 @@ exports.handler = async function(event, context) {
       }
 
       const gdeltData = await gdeltResponse.json();
-      const allArticles = gdeltData.articles || [];
+      let allArticles = gdeltData.articles || [];
 
       // Language-specific filtering
       const languageFilters = {
+        any: (_title) => true,
         en: (title) => {
-          // Reject non-Latin characters
+          // GDELT already filters by `sourcelang=eng`; keep this light to avoid dropping valid headlines.
           const hasNonLatin = /[\u0900-\u097F\u0980-\u09FF\u0C00-\u0C7F\u0D00-\u0D7F\u4e00-\u9fff\u0400-\u04FF\u0600-\u06FF\u0E00-\u0E7F\uAC00-\uD7AF\u3040-\u30FF\u0370-\u03FF]/.test(title);
-          if (hasNonLatin) return false;
-          // Check for English words
-          const englishWords = ['the', 'and', 'of', 'to', 'in', 'for', 'on', 'with', 'at', 'from', 'is', 'was', 'are', 'have', 'has', 'said', 'a', 'an', 'that', 'it'];
-          let matchCount = 0;
-          for (const word of englishWords) {
-            if (new RegExp(`\\b${word}\\b`, 'i').test(title)) {
-              matchCount++;
-              if (matchCount >= 2) return true;
-            }
-          }
-          return false;
+          return !hasNonLatin;
         },
         fr: (title) => /[àâäéèêëïîôùûüç]|(\b(le|la|les|de|du|des|et|en|un|une|est|sont|pour|avec|dans|sur|qui)\b)/i.test(title),
         de: (title) => /[äöüß]|(\b(der|die|das|und|ist|sind|für|mit|von|zu|bei|nach)\b)/i.test(title),
@@ -124,15 +137,43 @@ exports.handler = async function(event, context) {
       };
 
       const filterFn = languageFilters[language] || languageFilters['en'];
-      const articles = allArticles.filter(article => {
+      let articles = allArticles.filter(article => {
         const title = article.title || '';
         const url = article.url || '';
-        // For non-English, don't check URL language paths
+        // For English-only mode, drop obvious foreign-language paths.
         if (language === 'en' && /\/(afrique|mundo|arabic|russian|korean|chinese|japanese|hindi|portuguese|french|german|spanish|turkish)\//i.test(url)) {
           return false;
         }
         return filterFn(title);
       });
+
+      // If results are too sparse, retry without the domain filter for better coverage.
+      if (articles.length < 10) {
+        const fallbackUrl = new URL('https://api.gdeltproject.org/api/v2/doc/doc');
+        fallbackUrl.searchParams.set('query', String(normalizedCountryName || ''));
+        fallbackUrl.searchParams.set('mode', 'artlist');
+        fallbackUrl.searchParams.set('timespan', timespan);
+        fallbackUrl.searchParams.set('format', 'json');
+        fallbackUrl.searchParams.set('maxrecords', '250');
+        if (language !== 'any') {
+          fallbackUrl.searchParams.set('sourcelang', gdeltLangMap[language] || 'eng');
+        }
+
+        console.log('GDELT trending fallback URL:', fallbackUrl.toString());
+        const fallbackResp = await fetch(fallbackUrl.toString());
+        if (fallbackResp.ok && (fallbackResp.headers.get('content-type') || '').includes('application/json')) {
+          const fallbackData = await fallbackResp.json();
+          allArticles = fallbackData.articles || allArticles;
+          articles = allArticles.filter(article => {
+            const title = article.title || '';
+            const url = article.url || '';
+            if (language === 'en' && /\/(afrique|mundo|arabic|russian|korean|chinese|japanese|hindi|portuguese|french|german|spanish|turkish)\//i.test(url)) {
+              return false;
+            }
+            return filterFn(title);
+          });
+        }
+      }
 
       // Deduplicate by title (normalized)
       const seenTitles = new Set();
@@ -143,7 +184,7 @@ exports.handler = async function(event, context) {
         return true;
       });
 
-      console.log(`GDELT returned ${allArticles.length} articles, filtered to ${articles.length} English, ${uniqueArticles.length} unique for ${countryName}`);
+      console.log(`GDELT returned ${allArticles.length} articles, filtered to ${articles.length}, ${uniqueArticles.length} unique for ${normalizedCountryName}`);
 
       // Extract topics from article domains and titles with comprehensive keyword matching
       const topicCounts = {};
@@ -228,7 +269,7 @@ exports.handler = async function(event, context) {
         }
       }
 
-      console.log(`Extracted ${topics.length} topics for ${countryName}:`, topics.map(t => `${t.title} (heat: ${t.heat})`).join(', '));
+      console.log(`Extracted ${topics.length} topics for ${normalizedCountryName}:`, topics.map(t => `${t.title} (heat: ${t.heat})`).join(', '));
 
       return {
         statusCode: 200,

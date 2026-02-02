@@ -13,6 +13,7 @@ const initialState: FilterState = {
   // Article list supports Medium + GDELT + Finance + FT; MyFT requires auth (enable manually); Perplexity is used for intel widgets/search.
   sources: ['medium', 'gdelt', 'finance', 'ft'],
   searchQuery: '',
+  language: 'any',
 }
 
 export const useFilterStore = create<FilterStore>()(
@@ -55,6 +56,9 @@ export const useFilterStore = create<FilterStore>()(
       setSearchQuery: (query: string) =>
         set({ searchQuery: query }),
 
+      setLanguage: (language: string) =>
+        set({ language }),
+
       resetFilters: () =>
         set(initialState),
     }),
@@ -66,6 +70,7 @@ export const useFilterStore = create<FilterStore>()(
         dateRangeCustom: state.dateRangeCustom,
         sortBy: state.sortBy,
         sources: state.sources,
+        language: state.language,
       }),
     }
   )

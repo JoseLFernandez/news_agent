@@ -33,8 +33,8 @@ function inferTopicsFromText(text: string): string[] {
   return topics.length ? topics : ['technology']
 }
 
-async function fetchGdeltArticles(query: string, maxrecords = 50): Promise<Article[]> {
-  const url = `/.netlify/functions/gdelt-proxy?query=${encodeURIComponent(query)}&maxrecords=${maxrecords}`
+async function fetchGdeltArticles(query: string, maxrecords = 50, language: string = 'any'): Promise<Article[]> {
+  const url = `/.netlify/functions/gdelt-proxy?query=${encodeURIComponent(query)}&maxrecords=${maxrecords}&language=${encodeURIComponent(language)}`
   const resp = await fetch(url)
   const text = await resp.text()
 
@@ -81,7 +81,7 @@ async function fetchGdeltArticles(query: string, maxrecords = 50): Promise<Artic
   })
 }
 
-export function useGdeltArticles(topicFilters: string[] = []) {
+export function useGdeltArticles(topicFilters: string[] = [], language: string = 'any') {
   const query = topicFilters.length === 0
     ? '(technology OR business OR science)'
     : topicFilters.length === 1
@@ -89,8 +89,8 @@ export function useGdeltArticles(topicFilters: string[] = []) {
       : `(${topicFilters.join(' OR ')})`
 
   return useQuery({
-    queryKey: ['gdelt', 'articles', query],
-    queryFn: () => fetchGdeltArticles(query, 50),
+    queryKey: ['gdelt', 'articles', query, language],
+    queryFn: () => fetchGdeltArticles(query, 50, language),
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
   })

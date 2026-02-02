@@ -14,6 +14,7 @@ const REGIONS: { id: Country['region']; label: string }[] = [
 ]
 
 const LANGUAGES = [
+  { code: 'any', label: 'Local (Any language)', flag: '🌐' },
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'fr', label: 'French', flag: '🇫🇷' },
   { code: 'de', label: 'German', flag: '🇩🇪' },
@@ -53,6 +54,11 @@ export default function TrendingByCountry({ initialCountry }: TrendingByCountryP
   const [expandedTopic, setExpandedTopic] = useState<number | null>(null)
   const [language, setLanguage] = useState('en')
   const [translate, setTranslate] = useState(false)
+
+  // Translation is only applicable for specific (non-English) languages.
+  useEffect(() => {
+    if (language === 'en' || language === 'any') setTranslate(false)
+  }, [language])
   const dropdownRef = useRef<HTMLDivElement>(null)
   const langDropdownRef = useRef<HTMLDivElement>(null)
 
@@ -222,7 +228,7 @@ export default function TrendingByCountry({ initialCountry }: TrendingByCountryP
           </div>
 
           {/* Translation Toggle */}
-          {language !== 'en' && (
+          {language !== 'en' && language !== 'any' && (
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -246,7 +252,11 @@ export default function TrendingByCountry({ initialCountry }: TrendingByCountryP
               What's trending in {country?.name}
             </h3>
             <p className="text-xs text-gray-500">
-              {language === 'en' ? 'Real-time trending topics' : `${selectedLang.label} sources${translate ? ' (translated)' : ''}`}
+              {language === 'any'
+                ? 'Local headlines (any language)'
+                : language === 'en'
+                  ? 'Real-time trending topics'
+                  : `${selectedLang.label} sources${translate ? ' (translated)' : ''}`}
             </p>
           </div>
         </div>

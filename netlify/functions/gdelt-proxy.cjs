@@ -1,11 +1,22 @@
 exports.handler = async (event) => {
   const query = event.queryStringParameters?.query || 'technology';
   const maxrecords = event.queryStringParameters?.maxrecords || '50';
+  const language = event.queryStringParameters?.language || 'any';
 
   try {
-    const gdeltUrl = `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(query)}&mode=artlist&maxrecords=${maxrecords}&format=json`;
-    
-    const response = await fetch(gdeltUrl);
+    const gdeltLangMap = { en: 'eng', fr: 'fra', de: 'deu', es: 'spa', it: 'ita', pt: 'por', nl: 'nld', pl: 'pol' };
+    const sourcelang = gdeltLangMap[language];
+
+    const url = new URL('https://api.gdeltproject.org/api/v2/doc/doc');
+    url.searchParams.set('query', query);
+    url.searchParams.set('mode', 'artlist');
+    url.searchParams.set('maxrecords', String(maxrecords));
+    url.searchParams.set('format', 'json');
+    if (language !== 'any' && sourcelang) {
+      url.searchParams.set('sourcelang', sourcelang);
+    }
+
+    const response = await fetch(url.toString());
     
     if (!response.ok) {
       throw new Error(`GDELT API returned ${response.status}`);

@@ -19,11 +19,11 @@ interface UseArticlesResult {
  * Combined hook that fetches, filters, and sorts articles from all sources
  */
 export function useArticles(): UseArticlesResult {
-  const { selectedTopics, dateRange, dateRangeCustom, sortBy, sources } = useFilterStore()
+  const { selectedTopics, dateRange, dateRangeCustom, sortBy, sources, language } = useFilterStore()
 
   // Fetch from all sources
   const mediumQuery = useMediumArticles(selectedTopics)
-  const gdeltQuery = useGdeltArticles(selectedTopics)
+  const gdeltQuery = useGdeltArticles(selectedTopics, language)
   const financeQuery = useFinanceNews('all', 30, sources.includes('finance'))
   const ftQuery = useFTNews('all', 20, sources.includes('ft'))
   const myftQuery = useMyFT(20, sources.includes('myft'))
@@ -111,7 +111,7 @@ export function useArticles(): UseArticlesResult {
       ).length
       return bMatchCount - aMatchCount
     })
-  }, [mediumQuery.data, gdeltQuery.data, financeQuery.data, ftQuery.data, myftQuery.data, sources, dateRange, dateRangeCustom, selectedTopics, sortBy])
+  }, [mediumQuery.data, gdeltQuery.data, financeQuery.data, ftQuery.data, myftQuery.data, sources, dateRange, dateRangeCustom, selectedTopics, sortBy, language])
 
   const refetch = () => {
     mediumQuery.refetch()

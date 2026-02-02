@@ -1,17 +1,24 @@
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import SearchBar from '../search/SearchBar'
+import LanguageFilter from '../filters/LanguageFilter'
 
 export default function Header() {
-  const today = format(new Date(), 'EEEE, MMMM d, yyyy')
+  const todayLong = format(new Date(), 'EEEE, MMMM d, yyyy')
+  const todayShort = format(new Date(), 'MMM d, yyyy')
 
   return (
     <header className="border-b-2 border-ink-900 bg-white">
       <div className="max-w-7xl mx-auto px-4 py-4">
-        {/* Top bar with date and search */}
-        <div className="flex justify-between items-center text-xs text-gray-500 mb-3">
-          <span>{today}</span>
-          <SearchBar />
+        {/* Top bar with date and language */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center text-xs text-gray-500 mb-3 gap-3">
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline">{todayLong}</span>
+            <span className="sm:hidden">{todayShort}</span>
+          </div>
+          <div className="flex items-center gap-3 justify-end">
+            <LanguageFilter />
+          </div>
         </div>
 
         {/* Logo / Title */}
@@ -31,8 +38,9 @@ export default function Header() {
           </p>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex justify-center flex-wrap gap-4 md:gap-6 mt-4 text-sm font-semibold uppercase tracking-wide">
+        {/* Navigation + Search */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mt-4 gap-3">
+          <nav className="flex justify-center md:justify-start flex-wrap gap-4 md:gap-6 text-sm font-semibold uppercase tracking-wide">
           <Link
             to="/"
             className="text-ink-900 hover:text-accent-red transition-colors"
@@ -78,7 +86,11 @@ export default function Header() {
           >
             Business
           </Link>
-        </nav>
+          </nav>
+          <div className="flex justify-center md:justify-end">
+            <SearchBar />
+          </div>
+        </div>
       </div>
     </header>
   )

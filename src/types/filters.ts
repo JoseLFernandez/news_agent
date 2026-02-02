@@ -15,6 +15,7 @@ export interface FilterState {
   sortBy: SortBy
   sources: ArticleSource[]
   searchQuery: string
+  language: string // 'any' | 'en' | 'fr' | ...
 }
 
 export interface FilterActions {
@@ -26,5 +27,6 @@ export interface FilterActions {
   setSources: (sources: ArticleSource[]) => void
   toggleSource: (source: ArticleSource) => void
   setSearchQuery: (query: string) => void
+  setLanguage: (language: string) => void
   resetFilters: () => void
 }
