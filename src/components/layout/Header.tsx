@@ -63,6 +63,12 @@ export default function Header() {
             GitHub
           </Link>
           <Link
+            to="/sources"
+            className="text-gray-600 hover:text-ink-900 transition-colors"
+          >
+            Sources
+          </Link>
+          <Link
             to="/topic/technology"
             className="text-gray-600 hover:text-ink-900 transition-colors"
           >

@@ -14,6 +14,7 @@ A modern news aggregator with a **timeline view**, **date-range filtering**, and
   - **Header** language dropdown controls the main feed language (currently applied to the GDELT source)
   - Global Intelligence has its own language selector (includes **Local / Any language**)
 - **Docker-ready**: `docker compose up` runs the built SPA and routes `/.netlify/functions/*` to the bundled Netlify Functions
+- **Sources page** (`/sources`): curated external security + dev news links
 
 ## Project Structure
 
